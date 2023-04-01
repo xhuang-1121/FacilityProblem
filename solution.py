@@ -17,8 +17,8 @@ assignment_cost = []
 
 
 #  读取数据函数
-def ReadData (examplenum) :
-    f = open("Instances/p" + str(examplenum))
+def ReadData(examplenum):
+    f = open(f"Instances/p{str(examplenum)}")
 
     i = 0
     demandRowCount = 0
@@ -39,12 +39,7 @@ def ReadData (examplenum) :
         for line in f:
             line = line.replace('\n', "")
             tmps = line.split(" ")
-            tmp = []
-
-            for item in tmps :
-                if item != "":
-                    tmp.append(item)
-
+            tmp = [item for item in tmps if item != ""]
             if i == 0:
 
                 n = int(tmp[0])
@@ -58,17 +53,11 @@ def ReadData (examplenum) :
             elif i <= n + demandRowCount:
                 tmp = line.replace(".", "")
                 tmp = tmp.split(" ")
-                for item in tmp:
-                    if item != "":
-                        demand_customer.append(int(item))
-            elif i <= n + demandRowCount + m * rowForSingleFac :
-                tmpNum = []
+                demand_customer.extend(int(item) for item in tmp if item != "")
+            elif i <= n + demandRowCount + m * rowForSingleFac:
                 tmp = line.replace(".", " ")
                 tmp = tmp.split(" ")
-                for item in tmp:
-                    if item != "":
-                        tmpNum.append(int(item))
-
+                tmpNum = [int(item) for item in tmp if item != ""]
                 assignment_cost.append(tmpNum)
 
             i = i + 1
@@ -81,10 +70,10 @@ def ReadData (examplenum) :
                 for j in range(1, rowForSingleFac):
                     assignment_cost[i] = assignment_cost[i] + assignment_cost[i * rowForSingleFac + j]
 
-            assignment_cost = assignment_cost[0:m]
+            assignment_cost = assignment_cost[:m]
 
         f.close()
-        #print("read success")
+            #print("read success")
 
     except:
 
@@ -92,7 +81,7 @@ def ReadData (examplenum) :
         pass
 
 # 返回每个用户的工厂排名（以用户的cost为计量单位）
-def get_assign_rank (assign):
+def get_assign_rank(assign):
 
     rank_array = []
 
@@ -104,11 +93,7 @@ def get_assign_rank (assign):
 
 
         tmp = sorted(item)
-        addArr = []
-
-        for i in range(n):
-            addArr.append(tmp.index(item[i]))
-
+        addArr = [tmp.index(item[i]) for i in range(n)]
         rank_array.append(addArr)
 
     return rank_array
@@ -125,10 +110,7 @@ def greedSingle():
     # 没一列对于此工厂的在所有工厂的assign费用排名  优先选最小
     assignment_cost_rank = get_assign_rank(customer_assign)
 
-    open_flag = []
-    #初始化 工厂开放情况
-    for x in range(n):
-        open_flag.append(0)
+    open_flag = [0 for _ in range(n)]
     #
     for i in range(m):
         #对于每一个用户
@@ -151,8 +133,6 @@ def greedSingle():
                 total_assign_cost += assignment_cost[i][j]
                 capacity[fac_num] = capacity[fac_num] - demand_customer[i]
                 break
-            else:
-                pass
     # print(total_open_cost + total_assign_cost)
     # # print(total_assign_cost)
     # # print(total_open_cost)
@@ -210,7 +190,7 @@ def produce_local_search_solution(bestFactoryOpen, bestValueAssign, capacity_cop
     #选择的随机顾客标号为i
     i = random.randint(0, m - 1)
 
-    while (flag):
+    while flag:
         # 生成被安排的随机工厂
         fac_num = random.randint(0, n - 1)
         #如果生成的随机工厂就是原来的工厂则继续生成
@@ -243,11 +223,7 @@ def produce_local_search_solution(bestFactoryOpen, bestValueAssign, capacity_cop
             # 更新flag
             flag = False
 
-        #计算此解的cost 当做参数传出去
-        bestCost = 0
-        for s in range(m):
-            bestCost += assignment_cost[i][bestValueAssign[s]]
-
+        bestCost = sum(assignment_cost[i][bestValueAssign[s]] for s in range(m))
         for d in range(n):
             bestCost += bestFactoryOpen[d] * opening_cost[d]
 
@@ -260,9 +236,7 @@ def monte_carlo_search():
     bestFactoryOpen = []
     bestValueAssign = []
     time_start = time.time()
-    for i in range (10000) :
-
-
+    for _ in range (10000):
         tmp = produce_randan_solution()
 
 
@@ -291,7 +265,7 @@ def local_search(i):
     #因为进行贪心算法之后 全局数据发送了污染 所以要重新读取数据
     ReadData(i)
 
-    for x in range(100000) :
+    for _ in range(100000):
         #生成局部新解
         tmp1 = produce_local_search_solution(bestFactoryOpen, bestValueAssign, capacity_copy)
 
@@ -315,7 +289,7 @@ def local_search(i):
     return bestCost
 
 # 模拟退火算法求解
-def Simulate_Anneal(i) :
+def Simulate_Anneal(i):
     #设置初始参数
     T0 = 1000
     Tmin = 1
@@ -332,10 +306,10 @@ def Simulate_Anneal(i) :
     ReadData(i)
     t = T0
 
-    while(t >= Tmin):
+    while (t >= Tmin):
 
         #进行1000次生成新解的函数
-        for j in range(1000):
+        for _ in range(1000):
             # 生成局部新解
             tmp1 = produce_local_search_solution(bestFactoryOpen, bestValueAssign, capacity_copy)
 
@@ -350,7 +324,7 @@ def Simulate_Anneal(i) :
                 bestValueAssign = tmp1[2]
                 capacity_copy = tmp1[3]
 
-        t = eta*t
+        t *= eta
     #打印结果
     # print (bestCost)
     #
@@ -385,11 +359,13 @@ def greedTest():
         # 客户和工厂的距离
         assignment_cost = []
 
-        print("=============================test" + str(i) + "=============================")
+        print(
+            f"=============================test{str(i)}============================="
+        )
 
         strprint = ""
 
-        strprint = strprint + "p" + str(i) + "|"
+        strprint = f"{strprint}p{str(i)}|"
         time_start = time.time()
         ReadData(i)
         tmp = greedSingle()
@@ -429,17 +405,19 @@ def monte_carlo_test():
         # 客户和工厂的距离
         assignment_cost = []
 
-        print("=============================test" + str(i) + "=============================")
+        print(
+            f"=============================test{str(i)}============================="
+        )
 
         strprint = ""
 
-        strprint = strprint + "p" + str(i) + "|"
+        strprint = f"{strprint}p{str(i)}|"
         time_start = time.time()
         ReadData(i)
         tmp = monte_carlo_search()
         time_end = time.time()
 
-        strprint += str(tmp[0]) + "|" + str(time_end-time_start)[0:8]
+        strprint += f"{str(tmp[0])}|{str(time_end - time_start)[:8]}"
         print(tmp[0])
         print(tmp[1])
         print(tmp[2])
@@ -479,17 +457,19 @@ def local_search_test():
         # 客户和工厂的距离
         assignment_cost = []
 
-        print("=============================test" + str(i) + "=============================")
+        print(
+            f"=============================test{str(i)}============================="
+        )
 
         strprint = ""
 
-        strprint = strprint + "p" + str(i) + "|"
+        strprint = f"{strprint}p{str(i)}|"
         time_start = time.time()
         ReadData(i)
         tmp = local_search(i)
         time_end = time.time()
 
-        strprint += str(tmp) + "|" + str(time_end-time_start)[0:8]
+        strprint += f"{str(tmp)}|{str(time_end - time_start)[:8]}"
         # print(tmp[0])
         # print(tmp[1])
         # print(tmp[2])
@@ -498,7 +478,7 @@ def local_search_test():
         #print(strprint)
 
 # 模拟退火测试
-def Simulate_Anneal_test() :
+def Simulate_Anneal_test():
     for i in range(1, 72):
 
         # 67 这个数据有毒 是 以4个数据为一列 所以跳过此数据
@@ -529,13 +509,13 @@ def Simulate_Anneal_test() :
 
         strprint = ""
 
-        strprint = strprint + "p" + str(i) + "|"
+        strprint = f"{strprint}p{str(i)}|"
         time_start = time.time()
         ReadData(i)
         tmp = Simulate_Anneal(i)
         time_end = time.time()
 
-        strprint += str(tmp) + "|" + str(time_end - time_start)[0:8]
+        strprint += f"{str(tmp)}|{str(time_end - time_start)[:8]}"
         # print(tmp[0])
         # print(tmp[1])
         # print(tmp[2])
